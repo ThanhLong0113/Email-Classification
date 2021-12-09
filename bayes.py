@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from gensim.parsing.preprocessing import strip_non_alphanum, strip_multiple_whitespaces,preprocess_string, split_alphanum, strip_short, strip_numeric
 import re
+import csv
 
 
 def raw_text_preprocess(raw):
@@ -13,30 +14,40 @@ def raw_text_preprocess(raw):
 
     return raw
 
-xls_file = pd.ExcelFile('./Book1.xlsx')
-dfs = xls_file.parse('Sheet1')
+xls_file = pd.read_csv('emails.csv')
+#dfs = xls_file.parse('Sheet1')
 
 document = []
 label = []
 
-for d in dfs.Document:
-    d = raw_text_preprocess(d)
+for d in xls_file.Document:
     document.append(d)
-for l in dfs.Label:
+for l in xls_file.Label:
     label.append(l)
 
 document = [raw_text_preprocess(d) for d in document]
 
+
 #xay dung bag of words
 
+print("xaydung bagwwords")
 set_words = []
 
-for doc in document:
-    words = doc.split(' ')
-    set_words += words
-    set(set_words)
+with open('emailss.csv') as f:
+    # nCols = len(f.readline().split(','))
+    reader = csv.reader(f)
+    row1 = next(reader)
+# print(row1)
+r = row1[1:3001]
+set_words = r
+#print (set_words)
 
-print("Kich thuoc BAG WORDS:" , len(set_words))
+#for doc in document:
+#    words = doc.split(' ')
+#    set_words += words
+#    set(set_words)
+
+#print("Kich thuoc BAG WORDS:" , len(set_words))
 
 
 
@@ -47,7 +58,7 @@ for doc in document:
     vector = np.zeros(len(set_words))
     for i, word in enumerate(set_words):
         if word in doc:
-            vector[i] = 1
+            vector[i] += 1
     vectors.append(vector)
 
 print("So vector, so chieu: ",np.shape(vectors))
@@ -76,16 +87,18 @@ for i, word in enumerate(set_words):
     nonapp_spam = 0
     nonapp_nonspam = 0
     for k, v in enumerate(vectors):
-        if v[i] == 1:
-            if label[k] == 1:
-                app_spam += 1
-            else:
-                app_nonspam += 1
-        else:
+        if v[i] == 0:
             if label[k] == 1:
                 nonapp_spam += 1
             else:
                 nonapp_nonspam += 1
+            
+        else:
+            if label[k] == 1:
+                app_spam += 1
+            else:
+                app_nonspam += 1
+            
                 
     bayes_matrix[i][0] = smoothing(app_spam, spam)
     bayes_matrix[i][1] = smoothing(app_nonspam, non_spam)
@@ -98,7 +111,7 @@ def compare(predict_spam, predict_non_spam, log):
         log[0] -=1
         if predict_spam > predict_non_spam:
             return True
-        
+
     while(log[1] > log[0]):
         predict_non_spam /= 10
         log[1] -= 1
@@ -148,13 +161,22 @@ df_test = test.parse('Sheet1')
 document_test = []
 label_test = []
 
+
 for d in df_test.Document:
     document_test.append(d)
-    print(predict(d))
+    #print(predict(d))
 for l in df_test.Label:
     label_test.append(l)    
+#######################################
 
-from sklearn.metrics import accuracy_score
+
+
 
 pred = [predict(d) for d in document_test]
-print(accuracy_score(label_test, pred))
+print(accuracy_score(pred, label_test))
+
+from sklearn.model_selection import train_test_split
+X = df.iloc[:, 1:-1].values
+y = df.iloc[:, -1].values
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.30, random_state=101)
