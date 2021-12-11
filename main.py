@@ -1,6 +1,7 @@
 import re
 import numpy as np
 import csv
+from numpy.typing import _128Bit
 import pandas as pd
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.metrics import confusion_matrix
@@ -25,7 +26,6 @@ model = MultinomialNB()
 model.fit(train_matrix, train_label)
 
 #chuẩn hóa mail
-
 def raw_text_preprocess(raw):
     raw = re.sub(r"http\S+", "", raw)  #bỏ đường dẫn
     raw = strip_non_alphanum(raw).lower().strip()   #loại bỏ kí tự lạ, chuẩn hóa
@@ -51,13 +51,26 @@ document = [raw_text_preprocess(d) for d in test_document]
 test_matrix = []
 
 for doc in document:
+    words = doc.split(" ")
     vector = np.zeros(len(dictionary))
-    for i, word in enumerate(dictionary):
-        if word in doc:
-            vector[i] += 1
+    for word in words:
+        if word in dictionary:
+            vector[dictionary.index("{}".format(word))] +=1
     test_matrix.append(vector)
+print(test_matrix)
 
-#test
+#Dự đoán 1 mail mới
+def predict_mail(dirfile):
+    mail = open(dirfile)
+    mail = raw_text_preprocess(mail)
+    mail_vector = []
+    for i, word in enumerate(dictionary):
+        if word in mail:
+            mail_vector += 1
+    return model.predict(mail_vector)
+
+
+# #test
 result = model.predict(test_matrix)
 print(result)
 print(confusion_matrix(result, test_label))
