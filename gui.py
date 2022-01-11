@@ -30,7 +30,7 @@ def checkSpam(content,path):
         popup.wm_title("No file")
         label = tk.Label(
             popup,
-            text="Mail URL"
+            text="No file"
         )
         label.pack()
         button = tk.Button(
